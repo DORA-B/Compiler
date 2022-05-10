@@ -114,8 +114,8 @@ const char* ComponentName[] = {
 	"[LBBRACKET]",
 	//"RightBrace",
 	"[RBBRACKET]",
-	"LeftSquareBracket",
-	"RightSquareBracket",
+	"[LeftSquareBracket]",
+	"[RightSquareBracket]",
 	//"LeftBracket",
 	"[LPAREN]",
 	//"RightBracket",
@@ -248,7 +248,6 @@ bool LexAnalyzer::lex_analyze(string inFile)
 	ifstream f(inFile, ios::in);
 	if (f.fail())
 	{
-		
 		cout<< "Error: Fail to open file " << inFile << " !" << endl;
 		return false;
 	}
@@ -557,7 +556,6 @@ bool LexAnalyzer::lex_analyze(string inFile)
 						LexResult.push_back({ curLine,cur_elem,LexMap[cur_elem.c_str()] });
 					else
 						LexResult.push_back({ curLine,cur_elem,LexComponent::ID });
-
 				}
 		}
 	}

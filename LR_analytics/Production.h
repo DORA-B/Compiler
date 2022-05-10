@@ -7,8 +7,8 @@
 /*产生式类*/
 class Production {
 public:
-	Symbol Left;//左部
-	vector<Symbol> Right;//右部
+	Symbol Left; //左部
+	vector<Symbol> Right; //右部
 	friend ostream& operator<<(ostream& out, const Production& p);
 	friend bool operator==(const Production& p1, const Production& p2);
 	friend bool operator<(const Production& p1, const Production& p2);
@@ -21,8 +21,8 @@ public:
 class Event {
 public:
 	Production prod;//对应的production
-	int dotPos;//对应点的位置
-	Symbol ahead;//展望符号
+	int dotPos;     //对应点的位置
+	Symbol ahead;   //展望符号
 	Event(const Production& p, const int& pos,const Symbol& a);
 	friend ostream& operator<<(ostream& out, const Event& e);
 	friend bool operator==(const Event& ev1, const Event& ev2);

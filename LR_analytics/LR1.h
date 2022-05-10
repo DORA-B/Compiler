@@ -58,7 +58,7 @@ public:
 	set<Symbol> get_firstset_of_string(const vector<Symbol>& str);
 
 	//follow集的产生
-	void get_followset_of_vn();
+	//void get_followset_of_vn();
 
 	//生成闭包
 	void init_items();

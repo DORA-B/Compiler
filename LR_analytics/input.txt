@@ -1,20 +1,21 @@
-int program(int a,int b, int c)
+// #include<stdio.h>
+int program(int a,int b,int c)
 {
 	int i;
 	int j;
-	i=0;
+	i=0; 	
 	if(a>(b+c))
 	{
 		j=a+(b*c+1);
 	}
 	else
 	{
-		j=a;
+		j=a;  //j==3
 	}
-	i=j*2;
 	while(i<=100)
 	{
-		i=i*2;
+		j=j*2;
+		i=j;
 	}
 	return i;
 }
@@ -27,12 +28,12 @@ int demo(int a)
 
 void main()
 {
-	int a;
-	int b;
-	int c;
-	a=3;
-	b=4;
-	c=2;
-	a=program(a,b,demo(c));
-	return ;
+	int a[2][2];
+	a[0][0]=3;
+	a[0][1]=a[0][0]+1;
+    a[1][0]=a[0][1]+1;
+	a[1][1]=program(a[0][0],a[0][1],demo(a[1][0]));
+
+  // printf("%d,%d,%d.%d",a[0][0],a[0][1],a[1][0],a[1][1]);
+	return;
 }

@@ -154,8 +154,11 @@
     <ClInclude Include="Symbol.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="grammer.txt" />
+    <Text Include="grammar.txt" />
     <Text Include="input.txt" />
+    <Text Include="Lexoutput.txt" />
+    <Text Include="old_grammar.txt" />
+    <Text Include="old_input.txt" />
     <Text Include="quadrupleresult.txt" />
     <Text Include="resultTable.txt" />
   </ItemGroup>

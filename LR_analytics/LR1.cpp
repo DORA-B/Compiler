@@ -1,6 +1,6 @@
 #include "LR1.h"
 #include <iomanip>
-/******************SLR类******************/
+/******************LR1类******************/
 int LR1::read_generators(string dat_path)
 {
 
@@ -33,7 +33,7 @@ int LR1::read_generators(string dat_path)
 		int pos_arrow = s0.find("->");
 		//左部提取
 		string left0 = s0.substr(0, pos_arrow);
-		string left = left0.substr(left0.find('<'), left0.find('<') - left0.find('>') + 1);
+		string left = left0.substr(left0.find('<'), (left0.find('>') - left0.find('<')+1));
 		Symbol left_tag = Symbol(VN, left);
 		vSet.insert(left_tag);
 		vnSet.insert(left_tag);
@@ -53,7 +53,7 @@ int LR1::read_generators(string dat_path)
 				if (right_t[i] == '<') {//非终结符
 					int pos_rbracket = right_t.find_first_of('>', i);
 					string vn_s = right_t.substr(i, pos_rbracket - i + 1);
-					Symbol vn(VN, vn_s);
+					Symbol vn(VN, vn_s);  //VN表示非终结符号
 					vSet.insert(vn);
 					vnSet.insert(vn);
 					p1.Right.push_back(vn);
@@ -66,7 +66,7 @@ int LR1::read_generators(string dat_path)
 					if (vt_s == "[z]")
 						vt.symbol_type = EPSILON;
 					vSet.insert(vt);
-					if (vt.symbol_type == VT)
+					if (vt.symbol_type == VT)  //VT是终结符
 						vtSet.insert(vt);
 					p1.Right.push_back(vt);
 					i = pos_rbracket;
@@ -112,8 +112,8 @@ void init_firstset(LR1& lr1)
 {
 	//初始化firstset的map
 	for (auto sym = lr1.vSet.begin(); sym != lr1.vSet.end(); ++sym) {
-		set<Symbol>tmp{};
-		if (sym->symbol_type == VT)
+		set <Symbol> tmp{};
+		if (sym->symbol_type == VT)  //字符集中终结符的first集合就是本身
 			tmp.insert(*sym);
 		lr1.first_set.insert(make_pair(*sym, tmp));
 	}
@@ -131,13 +131,15 @@ void LR1::get_firstset_of_vn()
 		//遍历所有非终结符
 		for (auto vn = vnSet.begin(); vn != vnSet.end(); ++vn) {
 			//遍历所有产生式
+			//此时所有的产生式，左侧的非终结符可能一致，但是，右侧可能为终结符、非终结符的字符串或是[z]
 			for (auto prod = generator.begin(); prod != generator.end(); ++prod) {
 				if (prod->Left != *vn)
 					continue;
 				//找到对应产生式,开始遍历右部符号vector
 				auto prod_r = prod->Right.begin();
 
-				//是vt or ε直接加入first集合退出
+				//右侧第一个是vt or ε直接加入first集合，直接跳过这一条产生式
+				//如果是[z],先加入first集中
 				if (prod_r->symbol_type == VT || prod_r->symbol_type == EPSILON) {
 					changed = first_set[*vn].insert(*prod_r).second || changed;
 					continue;
@@ -146,9 +148,9 @@ void LR1::get_firstset_of_vn()
 				//右部以vn开始
 				bool eps = true;//可推导空串
 				for (; prod_r != prod->Right.end(); ++prod_r) {
-					//遇vt,停止
+					//遇vt,停止,加入VT到left的first集中
 					if (prod_r->symbol_type == VT) {
-						changed = mergeSetNoEpsilon(first_set[*vn], first_set[*prod_r]) || changed;
+						changed = first_set[*vn].insert(*prod_r).second || changed;
 						eps = false;
 						break;
 					}
@@ -161,7 +163,7 @@ void LR1::get_firstset_of_vn()
 						break;
 				}
 				//所有右部均可推出空串
-				if (eps && prod_r == prod->Right.end())
+				if (eps && (prod_r == prod->Right.end()))
 					changed = first_set[*vn].insert(symEps).second || changed;
 			}
 		}
@@ -324,7 +326,7 @@ void get_extension(LR1& slr)
 	s0_s.Left = s0;
 	s0_s.Right.push_back(Symbol(VN, "<Program>"));
 	slr.generator.insert(slr.generator.begin(), s0_s);
-	Event extS(s0_s, 0, symEnd); //包含S’的项目集
+	Event extS(s0_s, 0, symEnd); //包含 S’的项目集
 	EventClosure inieveclo;//包含展望符的项目闭包集合，默认空参构造函数
 	inieveclo.Es.push_back(extS);
 	slr.eventclo.push_back(slr.GetEventClo(inieveclo));
@@ -334,7 +336,6 @@ void get_extension(LR1& slr)
 void LR1::init_items()//根据generator生成拓广文法的items集合
 {
 	get_extension(*this);
-
 	for (int i = 0; i < eventclo.size(); i++)
 	{
 		for (set<Symbol>::iterator s = vSet.begin(); s != vSet.end(); s++)
@@ -342,8 +343,16 @@ void LR1::init_items()//根据generator生成拓广文法的items集合
 			//必须为终结符或非终结符
 			if (!((*s).symbol_type == VT || (*s).symbol_type == VN))
 				continue;
+			//  1. I的任何项目都属于CLOSURE(I)。
+			/*  2. 若项目[A→alpha·B beta, a]属于CLOSURE(I)，B→ Sigma
+				是一个产生式， 那么， 对于FIRST(beta a) 中的每
+				个终结符b， 如果[B→·Sigma, b]原来不在
+				CLOSURE(I)中， 则把它加进去。
+				3. 重复执行步骤2， 直至CLOSURE(I)不再增大
+				为止。*/
+
 			//得到的是VT/VN
-			EventClosure toclosure = GetEventTO(eventclo[i], (*s));
+			EventClosure toclosure = GetEventTO(eventclo[i],(*s));
 			//当为空时直接continue
 			if (toclosure.Es.empty())
 				continue;
@@ -366,14 +375,12 @@ void LR1::init_items()//根据generator生成拓广文法的items集合
 				GotoInfo[{i, (*s)}] = eventclo.size() - 1;
 			}
 		}		
-
 	}
 }
 
 
 EventClosure& LR1::GetEventClo(EventClosure& CloJ)
 {
-	// TODO: 在此处插入 return 语句
 	//注意这里不能使用迭代器，否则在CloJ.Es插值改变后会出错
 	for (int it = 0; it < CloJ.Es.size(); it++)
 	{
@@ -395,10 +402,8 @@ EventClosure& LR1::GetEventClo(EventClosure& CloJ)
 		vector<Symbol> ba((nowit.prod.Right.begin() + nowit.dotPos+1 ), nowit.prod.Right.end());
 		ba.push_back(nowit.ahead);//在扩展区域插入展望符号
 
-
 		set<Symbol> firstba = get_firstset_of_string(ba); //beta a的first集合
 		//for(auto i=firstba.begin();)
-
 
 		//找到nextsymbol开始的产生式
 		for (auto pro = generator.begin(); pro != generator.end(); pro++)
@@ -454,21 +459,26 @@ EventClosure LR1::GetEventTO(EventClosure& CloI, const Symbol sym)
 {
 	// TODO: 在此处插入 return 语句
 	EventClosure toclo;
-	//到这里的已经是VT或VN,不符合要求返回空
-	if (!(sym.symbol_type == VT || sym.symbol_type == VN))
-		return toclo;
+	////到这里的已经是VT或VN,不符合要求返回空
+	//if (!(sym.symbol_type == VT || sym.symbol_type == VN))
+	//	return toclo;
 
 	for (auto it = CloI.Es.begin(); it != CloI.Es.end(); it++)
 	{
 		//判断it的最后一个字符是“·”，直接跳过
 		if ((*it).dotPos >= (*it).prod.Right.size())
 			continue;
-		//最后一个字符不是present_symbol，接着判断
+
+		//最后一个字符不是 present_symbol，接着判断
 		if ((*it).prod.Right[(*it).dotPos] != sym)
 			continue;
-
+		// A.BC，移入B ,.aB,移入a
 		toclo.Es.push_back({ (*it).prod,(*it).dotPos + 1,(*it).ahead });		
 	}
+
+	//描述了从clo(I)输入VT/VN得到的转换结果，但没有做关于FIRST(beta a)的终结符的操作
+	//这时得到的是直接可以一步得到的结果
+	//下边求First(beta a) 
 	return GetEventClo(toclo);
 }
 
@@ -569,9 +579,7 @@ void LR1::printTable(const string file_path)
 
 void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 {
-
 	/*********************************************************************/
-
 	//初始化 semantic 类
 	SemanticAnalysis = SemanticAnalyzer();
 	/*********************************************************************/

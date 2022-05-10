@@ -119,11 +119,13 @@ bool is_unary_operator(LexComponent i);
 bool is_assignment(LexComponent i);
 bool is_id(LexComponent i);
 bool is_constant(LexComponent i);
+
 extern const char* ComponentString[];
 extern const char* ComponentName[];
 extern map<string, LexComponent> LexMap;
 extern const int symbolNum;
 void init_map();
+
 //用于中间代码生成
 typedef struct {
 	int line;

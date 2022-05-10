@@ -52,7 +52,7 @@ class SemanticSymtable
 #define BLOCK  2
 
 public:
-	int type; //上述5种类型
+	int type; //上述3种类型
 	string name;//符号表名称
 	vector<Identifier> Symtable; //符号表
 	SemanticSymtable(const int t_type, const string& t_name);
@@ -85,10 +85,13 @@ public:
 private:
 	void SemanProd_Program(const Production& pro);
 	void SemanProd_DecOption(const Production& pro);
-	void SemanProd_ParaDec(const Production& pro);
+	void SemanProd_ParaContent(const Production& pro); //new add
+	void SemanProd_ArrayDeclare(const Production& pro);//new add
+	void SemanProd_ParaDec(const Production& pro); 
 	void SemanProd_FunctionDeclare(const Production& pro);
 	void SemanProd_FunDec(const Production& pro);
 	void SemanProd_CreateFunTable_m(const Production& pro);
+	void SemanProd_VarContent(const Production& pro); //new add
 	void SemanProd_ParamDec(const Production& pro);
 	void SemanProd_Block(const Production& pro);
 	void SemanProd_Def(const Production& pro);
@@ -97,6 +100,7 @@ private:
 	void SemanProd_AddSubExp(const Production& pro);
 	void SemanProd_Item(const Production& pro);
 	void SemanProd_Factor(const Production& pro);
+	void SemanProd_Array(const Production& pro); //new add
 	void SemanProd_CallStmt(const Production& pro);
 	void SemanProd_CallFunCheck(const Production& pro);
 	void SemanProd_Args(const Production& pro);

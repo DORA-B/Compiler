@@ -52,7 +52,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="grammer.txt">
+    <Text Include="grammar.txt">
       <Filter>资源文件</Filter>
     </Text>
     <Text Include="resultTable.txt">
@@ -62,6 +62,15 @@
       <Filter>资源文件</Filter>
     </Text>
     <Text Include="quadrupleresult.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="Lexoutput.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="old_grammar.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="old_input.txt">
       <Filter>资源文件</Filter>
     </Text>
   </ItemGroup>

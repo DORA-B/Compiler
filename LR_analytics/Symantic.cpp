@@ -62,6 +62,12 @@ void SemanticAnalyzer::semanticANL(const Production& pro) {
 	//<DeclareString-option> -> <ParameterDeclare> [ID] [SEMI] | <FunctionDeclare> <FunDec> <Block>
 	else if (pro.Left.content == "<DeclareString-option>")
 		SemanProd_DecOption(pro);
+	//<ParameterContent> -> [LeftSquareBracket] [NUM] [RightSquareBracket] <ArrayDeclare> | [z]
+	else if (pro.Left.content == "<ParameterContent>")
+		SemanProd_ParaContent(pro);
+	//<ArrayDeclare> -> [LeftSquareBracket] [NUM] [RightSquareBracket] <ArrayDeclare> | [z]
+	else if (pro.Left.content == "<ArrayDeclare>")
+		SemanProd_ArrayDeclare(pro);
 	/*<ParameterDeclare> ->[INT]*/
 	else if (pro.Left.content == "<ParameterDeclare>")
 		SemanProd_ParaDec(pro);
@@ -74,6 +80,9 @@ void SemanticAnalyzer::semanticANL(const Production& pro) {
 	/*<CreateFunTable_m> ->[z]*/
 	else if (pro.Left.content == "<CreateFunTable_m>")
 		SemanProd_CreateFunTable_m(pro);
+	//<VarContent> -> <VarList> | [VOID]
+	else if (pro.Left.content == "<VarContent>")
+		SemanProd_VarContent(pro);
 	//<ParamDec> -> <ParameterDeclare>[ID]
 	else if (pro.Left.content == "<ParamDec>")
 		SemanProd_ParamDec(pro);
@@ -98,6 +107,9 @@ void SemanticAnalyzer::semanticANL(const Production& pro) {
 	/*<Factor> ->[NUM] | [LPAREN] <Exp>[RPAREN] | [ID] | <CallStmt>*/
 	else if (pro.Left.content == "<Factor>")
 		SemanProd_Factor(pro);
+	//<Array> -> [ID] [LeftSquareBracket] <Exp> [RightSquareBracket] | <Array> [LeftSquareBracket] <Exp> [RightSquareBracket] 
+	else if (pro.Left.content == "<Array>")
+		SemanProd_Array(pro);
 	/*<CallStmt> ->[ID][LPAREN] <CallFunCheck> <Args>[RPAREN]*/
 	else if (pro.Left.content == "<CallStmt>")
 		SemanProd_CallStmt(pro);
@@ -168,7 +180,7 @@ void SemanticAnalyzer::SemanProd_DecOption(const Production& pro)
 {
 	//如果是定义变量
 	if (pro.Right.size() == 3) {
-		// <ParameterDeclare> [ID] [SEMI]
+		// <ParameterDeclare> [ID] <ParameterContent> [SEMI]
 		SemanticSymbol pardec = symbolList[0];//int
 		SemanticSymbol ident = symbolList[1];//变量名
 
@@ -176,7 +188,7 @@ void SemanticAnalyzer::SemanProd_DecOption(const Production& pro)
 		bool existed = false;
 		SemanticSymtable current_table = allTable[cur_tableStack.back()];
 		if (current_table.findSym(ident.toke.content) != -1) {
-			cout << "[ERROR-10001] : " << ident.toke.line << "行，变量" << ident.toke.content << "重定义" << endl;			
+			cout << "[ERROR-10001] : " << ident.toke.line << "行，变量 " << ident.toke.content << " 重定义" << endl;			
 		}
 
 		//将这一变量加入table
