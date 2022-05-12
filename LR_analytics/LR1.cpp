@@ -579,10 +579,10 @@ void LR1::printTable(const string file_path)
 
 void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 {
-	/*********************************************************************/
-	//初始化 semantic 类
-	SemanticAnalysis = SemanticAnalyzer();
-	/*********************************************************************/
+	///*********************************************************************/
+	////初始化 semantic 类
+	//SemanticAnalysis = SemanticAnalyzer();
+	///*********************************************************************/
 
 	vector<Symbol> Symstack; //符号栈
 	vector<int>Statestack;  //状态栈
@@ -605,10 +605,9 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 	/*********************************************************************/
 
 	//将 Start 加入 semantic 的语义符号列表
-	SemanticAnalysis.insertSymbol( {{-1,"",strstart},-1,- 1 } );
+	//SemanticAnalysis.insertSymbol( {{-1,"",strstart},-1,- 1 } );
 
 	/*********************************************************************/
-
 
 	//int pos;
 	while (true&&!Code.empty())
@@ -647,7 +646,7 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 			else
 				tmp_in = firtok.content;
 			//将 token 加入 semantic 的语义符号列表
-			SemanticAnalysis.insertSymbol({{ firtok.line,firtok.content,tmp_in } , -1,- 1});
+			//SemanticAnalysis.insertSymbol({{ firtok.line,firtok.content,tmp_in } , -1,- 1});
 
 			/*********************************************************************/
 
@@ -701,7 +700,7 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 			//进行语义分析
 			//这里语义分析的时候，JUJU代码中只用到了产生式左边和右边的字符串，这里全部传入
 
-			SemanticAnalysis.semanticANL(now);
+			//SemanticAnalysis.semanticANL(now);
 
 			/*********************************************************************/
 

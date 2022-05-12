@@ -48,7 +48,7 @@ void SemanticAnalyzer::insertSymbol(const SemanticSymbol& sym) {
 /*打印四元式表*/
 void SemanticAnalyzer::printQuadruple(const string outpath) {
 	ofstream fout(outpath, ios::out);
-	for (auto x : quadruple)
+	for (auto x : Quadruple_Code)
 		fout << x.index << " ("
 		<< x.op << ',' << x.arg1 << ',' << x.arg2<< ',' << x.res
 		<< ")" << endl;
@@ -56,10 +56,18 @@ void SemanticAnalyzer::printQuadruple(const string outpath) {
 
 /*分析主体函数*/
 void SemanticAnalyzer::semanticANL(const Production& pro) {
-	//<Program> -> <DeclareString>
+	//<Program> -> <Pro_m> <DeclareString>
 	if (pro.Left.content == "<Program>")
 		SemanProd_Program(pro);
-	//<DeclareString-option> -> <ParameterDeclare> [ID] [SEMI] | <FunctionDeclare> <FunDec> <Block>
+	//<Pro_m> ->[z]
+	else if (pro.Left.content == "<Pro_m>")
+		SemanProd_Pro_m(pro);
+	//<DeclareString> -> <DeclareString - option> 
+	//				   | <DeclareString - option> <DeclareString>
+	else if (pro.Left.content == "<DeclareString>")
+		SemanProd_DeclareString(pro);
+	//<DeclareString-option> -> <ParameterDeclare> [ID] [SEMI] 
+	//						  | <FunctionDeclare> <FunDec> <Block>
 	else if (pro.Left.content == "<DeclareString-option>")
 		SemanProd_DecOption(pro);
 	//<ParameterContent> -> [LeftSquareBracket] [NUM] [RightSquareBracket] <ArrayDeclare> | [z]
@@ -68,9 +76,6 @@ void SemanticAnalyzer::semanticANL(const Production& pro) {
 	//<ArrayDeclare> -> [LeftSquareBracket] [NUM] [RightSquareBracket] <ArrayDeclare> | [z]
 	else if (pro.Left.content == "<ArrayDeclare>")
 		SemanProd_ArrayDeclare(pro);
-	/*<ParameterDeclare> ->[INT]*/
-	else if (pro.Left.content == "<ParameterDeclare>")
-		SemanProd_ParaDec(pro);
 	/*<FunctionDeclare> ->[VOID] | [INT]*/
 	else if (pro.Left.content == "<FunctionDeclare>")
 		SemanProd_FunctionDeclare(pro);
@@ -80,84 +85,109 @@ void SemanticAnalyzer::semanticANL(const Production& pro) {
 	/*<CreateFunTable_m> ->[z]*/
 	else if (pro.Left.content == "<CreateFunTable_m>")
 		SemanProd_CreateFunTable_m(pro);
-	//<VarContent> -> <VarList> | [VOID]
+	//<VarContent> -> <VarList> | [VOID] | [z]
 	else if (pro.Left.content == "<VarContent>")
 		SemanProd_VarContent(pro);
-	//<ParamDec> -> <ParameterDeclare>[ID]
+	//<VarList> -> <ParamDec> [COMMA] <VarList> | <ParamDec> 
+	else if (pro.Left.content == "<VarList>")
+		SemanProd_VarList(pro);
+	//<ParamDec> -> [INT] [ID]
 	else if (pro.Left.content == "<ParamDec>")
 		SemanProd_ParamDec(pro);
-	/*<Block> ->[LBBRACKET] <DefList> <StmtList>[RBBRACKET]*/
+	//<Block> ->[LBBRACKET] <DefList> <StmtList>[RBBRACKET]
 	else if (pro.Left.content == "<Block>")
 		SemanProd_Block(pro);
-	/*<Def> -> <ParameterDeclare>[ID][SEMI]*/
+	//<DefList> -> <Def> [SEMI] <DefList> | [z]
+	else if (pro.Left.content == "<DefList>")
+		SemanProd_DefList(pro);
+	//<Def> ->[INT][ID] <ParameterContent>
 	else if (pro.Left.content == "<Def>")
 		SemanProd_Def(pro);
-	/*<AssignStmt> ->[ID][ASSIGN] <Exp>*/
+	//<StmtList> -> <Stmt> <StmtList> | <Stmt> 
+	else if (pro.Left.content == "<StmtList>")
+		SemanProd_StmtList(pro);
+	//<Stmt> -> <AssignStmt>[SEMI] | <ReturnStmt>[SEMI] | <IfStmt> | <WhileStmt>
+	else if (pro.Left.content == "<Stmt>")
+		SemanProd_Stmt(pro);
+	//<AssignStmt> ->[ID][ASSIGN] <Exp> | <Array>[ASSIGN] <Exp>
 	else if (pro.Left.content == "<AssignStmt>")
 		SemanProd_AssignStmt(pro);
-	/*<Exp> -> <AddSubExp> | <Exp> <Relop> <AddSubExp>*/
+	//<Exp> -> <ANDExp> | <ANDExp> [OR] <Exp>
 	else if (pro.Left.content == "<Exp>")
 		SemanProd_Exp(pro);
-	/*<AddSubExp> -> <Item> | <Item>[PLUS] <Item> | <Item>[SUB] <Item>*/
-	else if (pro.Left.content == "<AddSubExp>")
-		SemanProd_AddSubExp(pro);
-	/*<Item> -> <Factor> | <Factor>[MUL] <Factor> | <Factor>[DIV] <Factor>*/
+	//<ANDExp> -> <NOTExp> | <NOTExp>[AND] <ANDExp>
+	else if (pro.Left.content == "<ANDExp>")
+		SemanProd_ANDExp(pro);
+	//<NOTExp> ->[NOT] <SubExp> | <SubExp>
+	else if (pro.Left.content == "<NOTExp>")
+		SemanProd_NOTExp(pro);
+	//<SubExp> -> <OPNUM> | <OPNUM> <Relop> <SubExp> 
+	else if (pro.Left.content == "<SubExp>")
+		SemanProd_SubExp(pro);
+	//<Relop> ->[GT] | [LT] | [GE] | [LE] | [EQ] | [NQ]
+	else if (pro.Left.content == "<Relop>")
+		SemanProd_Relop(pro);
+	//<OPNUM> -> <Item> | <Item> <OPERAT1> <OPNUM>
+	else if (pro.Left.content == "<OPNUM>")
+		SemanProd_OPNUM(pro);
+	//<Item> -> <Factor> | <Factor> <OPERAT2> <Item>
 	else if (pro.Left.content == "<Item>")
 		SemanProd_Item(pro);
-	/*<Factor> ->[NUM] | [LPAREN] <Exp>[RPAREN] | [ID] | <CallStmt>*/
+	//<OPERAT1> ->[PLUS] | [SUB] | [BinaryAnd] | [BinaryOr] | [BinaryXor]
+	else if (pro.Left.content == "<OPERAT1>")
+		SemanProd_OPERAT1(pro);
+	//<OPERAT2> -> [MUL] | [DIV] 
+	else if (pro.Left.content == "<OPERAT2>")
+		SemanProd_OPERAT2(pro);
+	//<Factor> -> [NUM] | [LPAREN] <Exp> [RPAREN] | [ID] | [ID] <CallStmt> | <Array> | [LPAREN] <AssignStmt> [RPAREN] 
 	else if (pro.Left.content == "<Factor>")
 		SemanProd_Factor(pro);
 	//<Array> -> [ID] [LeftSquareBracket] <Exp> [RightSquareBracket] | <Array> [LeftSquareBracket] <Exp> [RightSquareBracket] 
 	else if (pro.Left.content == "<Array>")
 		SemanProd_Array(pro);
-	/*<CallStmt> ->[ID][LPAREN] <CallFunCheck> <Args>[RPAREN]*/
+	//<CallStmt> -> [LPAREN] <CallFun> [RPAREN]
 	else if (pro.Left.content == "<CallStmt>")
 		SemanProd_CallStmt(pro);
-	/*<CallFunCheck> ->[z]*/
-	else if (pro.Left.content == "<CallFunCheck>")
-		SemanProd_CallFunCheck(pro);
-	/*<Args> -> <Exp> [COMMA] <Args> | <Exp> | [z]*/
+	//<CallFun> ->[z] | <Args>
+	else if (pro.Left.content == "<CallFun>")
+		SemanProd_CallFun(pro);
+	//<Args> -> <Exp>[COMMA] <Args> | <Exp>
 	else if (pro.Left.content == "<Args>")
 		SemanProd_Args(pro);
-	/*<ReturnStmt> ->[RETURN] <Exp> | [RETURN]*/
+	//<ReturnStmt> -> [RETURN] <Exp> | [RETURN]
 	else if (pro.Left.content == "<ReturnStmt>")
 		SemanProd_ReturnStmt(pro);
-	/*<Relop> ->[GT] | [LT] | [GE] | [LE] | [EQ] | [NQ]*/
-	else if (pro.Left.content == "<Relop>")
-		SemanProd_Relop(pro);
-	/*<IfStmt> ->[IF] <IfStmt_m1>[LPAREN] <Exp>[RPAREN] <IfStmt_m2> <Block> <IfNext>*/
-	else if (pro.Left.content == "<IfStmt>")
-		SemanProd_IfStmt(pro);
-	/*<IfStmt_m1> ->[z]*/
-	else if (pro.Left.content == "<IfStmt_m1>")
-		SemanProd_IfStmt_m1(pro);
-	/*<IfStmt_m2> ->[z]*/
-	else if (pro.Left.content == "<IfStmt_m2>")
-		SemanProd_IfStmt_m2(pro);
-	/*<IfNext> ->[z] | <IfStmt_next>[ELSE] <Block>*/
-	else if (pro.Left.content == "<IfNext>")
-		SemanProd_IfNext(pro);
-	/*<IfStmt_next>->[z]*/
-	else if (pro.Left.content == "<IfStmt_next>")
-		SemanProd_IfStmt_next(pro);
-	/*<WhileStmt> ->[WHILE] <WhileStmt_m1>[LPAREN] <Exp>[RPAREN] <WhileStmt_m2> <Block>*/
+	//<WhileStmt> -> <WhileStmt_m1> [WHILE] [LPAREN] <Exp> [RPAREN] <WhileStmt_m2> <Block>
 	else if (pro.Left.content == "<WhileStmt>")
 		SemanProd_WhileStmt(pro);
-	/*<WhileStmt_m1> ->[z]*/
+	//<WhileStmt_m1> ->[z]
 	else if (pro.Left.content == "<WhileStmt_m1>")
 		SemanProd_WhileStmt_m1(pro);
-	/*<WhileStmt_m2> ->[z]*/
+	//<WhileStmt_m2> ->[z]
 	else if (pro.Left.content == "<WhileStmt_m2>")
 		SemanProd_WhileStmt_m2(pro);
+	//<IfStmt> -> [IF] [LPAREN] <Exp> [RPAREN] <IfStmt_m2> <Block> <IfNext>
+	else if (pro.Left.content == "<IfStmt>")
+		SemanProd_IfStmt(pro);
+	//<IfStmt_m> -> [z]
+	else if (pro.Left.content == "<IfStmt_m>")
+		SemanProd_IfStmt_m1(pro);
+	//<IfNext> -> [z] | [ELSE] <IfStmt_next> <Block>
+	else if (pro.Left.content == "<IfNext>")
+		SemanProd_IfNext(pro);
+	//<IfStmt_next>-> [z]
+	else if (pro.Left.content == "<IfStmt_next>")
+		SemanProd_IfStmt_next(pro);
 	else {
 		if (pro.Right[0] != symEps) {
 			int count = pro.Right.size();
 			while (count--)
 				symbolList.pop_back();
 		}
-		symbolList.push_back({ {-1,"",pro.Left.content},-1, -1 });
+		
+		symbolList.push_back({{-1,"",pro.Left.content},-1, -1 });
+		/*cout << "can't find symbol[" << pro.Left.content << "]" << endl;*/
 	}
-
 }
 
 void SemanticAnalyzer::SemanProd_Program(const Production& pro)
@@ -171,7 +201,7 @@ void SemanticAnalyzer::SemanProd_Program(const Production& pro)
 		symbolList.pop_back();
 	}
 	//在最前面加入四元式
-	quadruple.insert(quadruple.begin(), { 0, "j","-" , "-", to_string(main_index) });
+	Quadruple_Code.insert(Quadruple_Code.begin(), { 0, "j","-" , "-", to_string(main_index) });
 
 	symbolList.push_back({ {  -1,"",pro.Left.content}, -1, -1 });
 }
@@ -220,6 +250,12 @@ void SemanticAnalyzer::SemanProd_DecOption(const Production& pro)
 		symbolList.push_back({ {ident.toke.line,ident.toke.content,pro.Left.content },ident.table_index,ident.index });
 	}
 }
+void SemanticAnalyzer::SemanProd_ParaContent(const Production& pro)
+{
+}
+void SemanticAnalyzer::SemanProd_ArrayDeclare(const Production& pro)
+{
+}
 /**********************************************************************************/
 void SemanticAnalyzer::SemanProd_ParaDec(const Production& pro)
 {
@@ -259,14 +295,14 @@ void SemanticAnalyzer::SemanProd_CreateFunTable_m(const Production& pro)
 	SemanticSymbol specifier = symbolList[symbolList.size() - 2];
 
 	//首先在全局的table判断函数名是否重定义
-	if (allTable[0].findSym(ident.toke.content) != -1) {
+	if (allTable[GLOBAL].findSym(ident.toke.content) != -1) {
 		cout<< "[ERROR-10002] :" << ident.toke.line << "行，函数" << ident.toke.content << "重定义" << endl;
 	}
 
 	//创建函数表
 	allTable.push_back(SemanticSymtable(FUNC, ident.toke.content));
 	//在全局符号表创建当前函数的符号项（这里参数个数和入口地址会进行回填）
-	allTable[0].insertSym({ FUNC,specifier.toke.content,ident.toke.content,0,0,int(allTable.size() - 1) });
+	allTable[GLOBAL].insertSym({ FUNC,specifier.toke.content,ident.toke.content,0,0,int(allTable.size() - 1) });
 
 	//函数表压入栈
 	cur_tableStack.push_back(allTable.size() - 1);
@@ -280,12 +316,16 @@ void SemanticAnalyzer::SemanProd_CreateFunTable_m(const Production& pro)
 	if (ident.toke.content == "main")
 		main_index = nextQ_index;
 	//加入四元式
-	quadruple.push_back({ nextQ_index++ , ident.toke.content,"-","-" ,"-" });
+	Quadruple_Code.push_back({ nextQ_index++ , ident.toke.content,"-","-" ,"-" });
 	//向函数表中加入返回变量
 	allTable[cur_tableStack.back()].insertSym(return_value);
 	//空串不需要pop
 	//进行pushback
-	symbolList.push_back({ {ident.toke.line,ident.toke.content,pro.Left.content},0,int(allTable[0].Symtable.size() - 1) });	
+	symbolList.push_back({ {ident.toke.line,ident.toke.content,pro.Left.content},0,int(allTable[GLOBAL].Symtable.size() - 1) });	
+}
+
+void SemanticAnalyzer::SemanProd_VarContent(const Production& pro)
+{
 }
 
 void SemanticAnalyzer::SemanProd_ParamDec(const Production& pro)
@@ -304,12 +344,12 @@ void SemanticAnalyzer::SemanProd_ParamDec(const Production& pro)
 	//函数表加入形参变量
 	int new_position = function_table.insertSym({ VAR ,specifier.toke.content ,ident.toke.content,-1,-1,-1 });
 	//当前函数在全局符号中的索引
-	int table_position = allTable[0].findSym(function_table.name);
+	int table_position = allTable[GLOBAL].findSym(function_table.name);
 	//形参个数++
-	allTable[0].Symtable[table_position].paraNum++;
+	allTable[GLOBAL].Symtable[table_position].paraNum++;
 
 	//加入四元式
-	quadruple.push_back({ nextQ_index++, "defpar","-" , "-", ident.toke.content });
+	Quadruple_Code.push_back({ nextQ_index++, "defpar","-" , "-", ident.toke.content });
 
 	//symbolList更新
 	int count = pro.Right.size();
@@ -370,7 +410,7 @@ void SemanticAnalyzer::SemanProd_AssignStmt(const Production& pro)
 		cout << "[ERROR-10005] : " << ident.toke.line << "行，变量" << ident.toke.line << "未定义" << endl;		
 	}
 
-	quadruple.push_back({ nextQ_index++, "=", exp.toke.content, "-", ident.toke.content });
+	Quadruple_Code.push_back({ nextQ_index++, "=", exp.toke.content, "-", ident.toke.content });
 
 	//更新symbolList
 	int count = pro.Right.size();
@@ -395,10 +435,10 @@ void SemanticAnalyzer::SemanProd_Exp(const Production& pro)
 		SemanticSymbol sub_exp2 = symbolList[symbolList.size() - 1];
 		int next_label_num = nextQ_index++;
 		string new_tmp_var = "T" + to_string(cnt++);
-		quadruple.push_back({ next_label_num, "j" + op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, to_string(next_label_num + 3) });
-		quadruple.push_back({ nextQ_index++, "=", "0", "-", new_tmp_var });
-		quadruple.push_back({ nextQ_index++, "j", "-", "-", to_string(next_label_num + 4) });
-		quadruple.push_back({ nextQ_index++, "=", "1", "-", new_tmp_var });
+		Quadruple_Code.push_back({ next_label_num, "j" + op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, to_string(next_label_num + 3) });
+		Quadruple_Code.push_back({ nextQ_index++, "=", "0", "-", new_tmp_var });
+		Quadruple_Code.push_back({ nextQ_index++, "j", "-", "-", to_string(next_label_num + 4) });
+		Quadruple_Code.push_back({ nextQ_index++, "=", "1", "-", new_tmp_var });
 
 		int count = pro.Right.size();
 		while (count--)
@@ -422,7 +462,7 @@ void SemanticAnalyzer::SemanProd_AddSubExp(const Production& pro)
 		SemanticSymbol op = symbolList[symbolList.size() - 2];
 		SemanticSymbol sub_exp2 = symbolList[symbolList.size() - 1];
 		string new_tmp_var = "T" + to_string(cnt++);
-		quadruple.push_back({ nextQ_index++, op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, new_tmp_var });
+		Quadruple_Code.push_back({ nextQ_index++, op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, new_tmp_var });
 
 		int count = pro.Right.size();
 		while (count--)
@@ -446,7 +486,7 @@ void SemanticAnalyzer::SemanProd_Item(const Production& pro)
 		SemanticSymbol op = symbolList[symbolList.size() - 2];
 		SemanticSymbol sub_exp2 = symbolList[symbolList.size() - 1];
 		std::string new_tmp_var = "T" + to_string(cnt++);
-		quadruple.push_back({ nextQ_index++, op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, new_tmp_var });
+		Quadruple_Code.push_back({ nextQ_index++, op.toke.content, sub_exp1.toke.content, sub_exp2.toke.content, new_tmp_var });
 
 		int count = pro.Right.size();
 		while (count--)
@@ -491,6 +531,10 @@ void SemanticAnalyzer::SemanProd_Factor(const Production& pro)
 	}
 }
 
+void SemanticAnalyzer::SemanProd_Array(const Production& pro)
+{
+}
+
 
 
 
@@ -513,7 +557,7 @@ void SemanticAnalyzer::SemanProd_CallStmt(const Production& pro)
 
 	// 生成函数调用四元式 
 	string new_tmp_var = "T" + to_string(cnt++);
-	quadruple.push_back({ nextQ_index++, "call", identifier.toke.content, "-", new_tmp_var });
+	Quadruple_Code.push_back({ nextQ_index++, "call", identifier.toke.content, "-", new_tmp_var });
 
 	int count = pro.Right.size();
 	while (count--)
@@ -526,12 +570,12 @@ void SemanticAnalyzer::SemanProd_CallFunCheck(const Production& pro)
 {
 	SemanticSymbol fun_id = symbolList[symbolList.size() - 2];
 
-	int fun_id_pos = allTable[0].findSym(fun_id.toke.content);
+	int fun_id_pos = allTable[GLOBAL].findSym(fun_id.toke.content);
 
 	if (-1 == fun_id_pos) {
 		cout << "[ERROR-10009] : " << fun_id.toke.line << "行，函数" << fun_id.toke.content << "调用未定义" << endl;		
 	}
-	if (allTable[0].Symtable[fun_id_pos].type != FUNC) {
+	if (allTable[GLOBAL].Symtable[fun_id_pos].type != FUNC) {
 		cout << "[ERROR-10010] : " << fun_id.toke.line << "行，函数" << fun_id.toke.content << "调用未定义" << endl;		
 	}
 	symbolList.push_back({ {fun_id.toke.line, fun_id.toke.content, pro.Left.content}, 0, fun_id_pos });
@@ -541,7 +585,7 @@ void SemanticAnalyzer::SemanProd_Args(const Production& pro)
 {
 	if (pro.Right.size() == 3) {
 		SemanticSymbol exp = symbolList[symbolList.size() - 3];
-		quadruple.push_back({ nextQ_index++, "param", exp.toke.content, "-", "-" });
+		Quadruple_Code.push_back({ nextQ_index++, "param", exp.toke.content, "-", "-" });
 		int aru_num = stoi(symbolList.back().toke.content) + 1;
 		int count = pro.Right.size();
 		while (count--)
@@ -550,7 +594,7 @@ void SemanticAnalyzer::SemanProd_Args(const Production& pro)
 	}
 	else if (pro.Right[0].content == "<Exp>") {
 		SemanticSymbol exp = symbolList.back();
-		quadruple.push_back({ nextQ_index++, "param", exp.toke.content, "-", "-" });
+		Quadruple_Code.push_back({ nextQ_index++, "param", exp.toke.content, "-", "-" });
 		int count = pro.Right.size();
 		while (count--)
 			symbolList.pop_back();
@@ -570,10 +614,10 @@ void SemanticAnalyzer::SemanProd_ReturnStmt(const Production& pro)
 		SemanticSymtable function_table = allTable[cur_tableStack.back()];
 
 		//添加四元式
-		quadruple.push_back({ nextQ_index++,"=",return_exp.toke.content,"-",function_table.Symtable[0].name });
+		Quadruple_Code.push_back({ nextQ_index++,"=",return_exp.toke.content,"-",function_table.Symtable[0].name });
 
 		//添加四元式
-		quadruple.push_back({ nextQ_index++ ,"return",function_table.Symtable[0].name,"-",function_table.name });
+		Quadruple_Code.push_back({ nextQ_index++ ,"return",function_table.Symtable[0].name,"-",function_table.name });
 
 		//更新symbolList
 		int count = pro.Right.size();
@@ -586,12 +630,12 @@ void SemanticAnalyzer::SemanProd_ReturnStmt(const Production& pro)
 		SemanticSymtable function_table = allTable[cur_tableStack.back()];
 
 		//检查函数的返回值是否为void
-		if (allTable[0].Symtable[allTable[0].findSym(function_table.name)].specialType != "void") {
+		if (allTable[GLOBAL].Symtable[allTable[GLOBAL].findSym(function_table.name)].specialType != "void") {
 			cout << "[ERROR-10011] : " << symbolList.back().toke.line << "行，函数" << function_table.name << "必须有返回值" << endl;
 		}
 
 		//添加四元式
-		quadruple.push_back({ nextQ_index++ ,"return","-","-",function_table.name });
+		Quadruple_Code.push_back({ nextQ_index++ ,"return","-","-",function_table.name });
 
 		//更新symbolList
 		int count = pro.Right.size();
@@ -620,22 +664,22 @@ void SemanticAnalyzer::SemanProd_IfStmt(const Production& pro)
 	if (ifnext.toke.content.empty()) {
 		//只有if没有else
 		//真出口
-		quadruple[backpatching_list.back()].res = ifstmt_m2.toke.content;
+		Quadruple_Code[backpatching_list.back()].res = ifstmt_m2.toke.content;
 		backpatching_list.pop_back();
 
 		//假出口
-		quadruple[backpatching_list.back()].res = to_string(nextQ_index);
+		Quadruple_Code[backpatching_list.back()].res = to_string(nextQ_index);
 		backpatching_list.pop_back();
 	}
 	else {
 		//if块出口
-		quadruple[backpatching_list.back()].res = to_string(nextQ_index);
+		Quadruple_Code[backpatching_list.back()].res = to_string(nextQ_index);
 		backpatching_list.pop_back();
 		//if真出口
-		quadruple[backpatching_list.back()].res = ifstmt_m2.toke.content;
+		Quadruple_Code[backpatching_list.back()].res = ifstmt_m2.toke.content;
 		backpatching_list.pop_back();
 		//if假出口
-		quadruple[backpatching_list.back()].res = ifnext.toke.content;
+		Quadruple_Code[backpatching_list.back()].res = ifnext.toke.content;
 		backpatching_list.pop_back();
 	}
 	backpatching_level--;
@@ -658,12 +702,12 @@ void SemanticAnalyzer::SemanProd_IfStmt_m2(const Production& pro)
 	SemanticSymbol if_exp = symbolList[symbolList.size() - 2];
 
 	//待回填四元式 : 假出口
-	quadruple.push_back({ nextQ_index++,"j=",if_exp.toke.content,"0","" });
-	backpatching_list.push_back(quadruple.size() - 1);
+	Quadruple_Code.push_back({ nextQ_index++,"j=",if_exp.toke.content,"0","" });
+	backpatching_list.push_back(Quadruple_Code.size() - 1);
 
 	//待回填四元式 : 真出口
-	quadruple.push_back({ nextQ_index++,"j=","-","-","" });
-	backpatching_list.push_back(quadruple.size() - 1);
+	Quadruple_Code.push_back({ nextQ_index++,"j=","-","-","" });
+	backpatching_list.push_back(Quadruple_Code.size() - 1);
 
 	symbolList.push_back({ {-1,to_string(nextQ_index),pro.Left.content},-1,-1 });
 }
@@ -682,8 +726,8 @@ void SemanticAnalyzer::SemanProd_IfNext(const Production& pro)
 void SemanticAnalyzer::SemanProd_IfStmt_next(const Production& pro)
 {
 	//if 的跳出语句(else 之前)(待回填)
-	quadruple.push_back({ nextQ_index++,"j","-","-","" });
-	backpatching_list.push_back(quadruple.size() - 1);
+	Quadruple_Code.push_back({ nextQ_index++,"j","-","-","" });
+	backpatching_list.push_back(Quadruple_Code.size() - 1);
 	symbolList.push_back({ {-1,to_string(nextQ_index),pro.Left.content},-1,-1 });
 }
 
@@ -693,14 +737,14 @@ void SemanticAnalyzer::SemanProd_WhileStmt(const Production& pro)
 	SemanticSymbol whilestmt_m2 = symbolList[symbolList.size() - 2];
 
 	// 无条件跳转到 while 的条件判断语句处
-	quadruple.push_back({ nextQ_index++,"j","-","-" ,whilestmt_m1.toke.content });
+	Quadruple_Code.push_back({ nextQ_index++,"j","-","-" ,whilestmt_m1.toke.content });
 
 	//回填真出口
-	quadruple[backpatching_list.back()].res = whilestmt_m2.toke.content;
+	Quadruple_Code[backpatching_list.back()].res = whilestmt_m2.toke.content;
 	backpatching_list.pop_back();
 
 	//回填假出口
-	quadruple[backpatching_list.back()].res = to_string(nextQ_index);
+	Quadruple_Code[backpatching_list.back()].res = to_string(nextQ_index);
 	backpatching_list.pop_back();
 
 	backpatching_level--;
@@ -723,11 +767,11 @@ void SemanticAnalyzer::SemanProd_WhileStmt_m2(const Production& pro)
 	SemanticSymbol while_exp = symbolList[symbolList.size() - 2];
 
 	//假出口
-	quadruple.push_back({ nextQ_index++,"j=",while_exp.toke.content,"0","" });
-	backpatching_list.push_back(quadruple.size() - 1);
+	Quadruple_Code.push_back({ nextQ_index++,"j=",while_exp.toke.content,"0","" });
+	backpatching_list.push_back(Quadruple_Code.size() - 1);
 	//真出口
-	quadruple.push_back({ nextQ_index++ ,"j","-","-" ,"" });
-	backpatching_list.push_back(quadruple.size() - 1);
+	Quadruple_Code.push_back({ nextQ_index++ ,"j","-","-" ,"" });
+	backpatching_list.push_back(Quadruple_Code.size() - 1);
 
 	symbolList.push_back({ { -1,to_string(nextQ_index),pro.Left.content }, -1, -1 });
 }

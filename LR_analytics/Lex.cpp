@@ -144,9 +144,9 @@ const char* ComponentName[] = {
 	"[LE]",
 	"LogicalAnd",
 	"LogicalOr",
-	"BinaryAnd",
-	"BinaryOr",
-	"BinaryXor",
+	"[BinaryAnd]",
+	"[BinaryOr]",
+	"[BinaryXor]",
 	//unary operators
 	"BinaryNot",
 	"LogicalNot",
@@ -554,8 +554,23 @@ bool LexAnalyzer::lex_analyze(string inFile)
 					}
 					if (LexMap.find(cur_elem) != LexMap.end())
 						LexResult.push_back({ curLine,cur_elem,LexMap[cur_elem.c_str()] });
-					else
+					else //说明不属于已有的函数或其他命名，是自定义的名字
+					{
+						bool flag = false; // 表明在符号表中是否存在
+						for (map<int, string>::iterator it = this->NameTable.begin(); it != this->NameTable.end(); it++)
+						{
+							if (it->second == cur_elem)
+							{
+								flag = true; //表明已经存在
+								break;
+							}
+						}
+						if (!flag)
+						{
+							NameTable.insert(pair<int, string>(this->symbol_count++, cur_elem));
+						}
 						LexResult.push_back({ curLine,cur_elem,LexComponent::ID });
+					}
 				}
 		}
 	}

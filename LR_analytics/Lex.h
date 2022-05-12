@@ -147,11 +147,14 @@ typedef struct {
 
 
 class LexAnalyzer {
+private:
+	int symbol_count; //已经分析道的符号表，计数 num([ID])
 public:
 	LexAnalyzer() { init(); }
 	int resultNum;//分析结果vector的元素数量
 	//Token get_rslt_elem(int index) { return index < LexResult.size() ? LexResult[index] : Token{ -1,"",LexComponent::Undefined }; }//获取结果中第index个单词
-	void init() { resultNum = 0; curLine = 1; LexResult.clear(); }//重置
+	map<int, string> NameTable; //符号表
+	void init() { symbol_count = 0;  resultNum = 0; curLine = 1; LexResult.clear(); }//重置
 	bool lex_analyze(string inFile);
 	void output_result(string outFile);
 	void getResult();//LexResult->Result

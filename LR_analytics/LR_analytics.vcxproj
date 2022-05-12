@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Lex.cpp" />
+    <ClCompile Include="LR1_semantic.cpp" />
     <ClCompile Include="Production.cpp" />
     <ClCompile Include="LR1.cpp" />
     <ClCompile Include="LR1_main.cpp" />
