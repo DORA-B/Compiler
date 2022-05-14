@@ -99,6 +99,7 @@ Line	Content			Type
 29	void			[VOID]
 29	main			[ID]
 29	(			[LPAREN]
+29	void			[VOID]
 29	)			[RPAREN]
 30	{			[LBBRACKET]
 31	int			[INT]

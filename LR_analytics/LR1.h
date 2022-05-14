@@ -1,6 +1,7 @@
 #pragma once
 #include <set>
 #include <map>
+#include <stack>
 #include <vector>
 #include <iostream>
 #include <string>
@@ -46,12 +47,13 @@ public:
 	map<pair<int, Symbol>, op> ActionTable;//Action表:ACTION[i,a]=op
 
 	SemanticAnalyzer SemanticAnalysis;
-
+	int leafnum = 0;
+	int maxtreelevel = 0;
+	IdentNode* reductionTreeRoot = NULL;
 /************************************************************/
 
 	//读取产生式,生成拓广文法
 	int read_generators(string dat_path);
-
 	//first集的产生
 	void get_firstset_of_vn();
 	//返回某符号串的first集
@@ -71,5 +73,7 @@ public:
 	void getTable();
 	void printTable(const string file_path);
 	void grammartree(const string filepath, queue<SymToken>& code);
+	void Seman_analysis(queue<SymToken>& Code);
+	void Seman_tree(IdentNode*thenode,int thelevel);
 };
 

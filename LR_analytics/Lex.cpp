@@ -591,6 +591,22 @@ void LexAnalyzer::getResult()
 	}
 }
 
+int LexAnalyzer::getcount(const Symbol elem)
+{
+
+	int ret = -1;
+	for (map<int, string>::iterator it = this->NameTable.begin(); it != this->NameTable.end(); it++)
+	{
+		if (it->second == elem.content)
+		{
+			ret = it->first; //表明已经存在
+			return ret;
+		}
+	}
+	//不存在，说明不是ID符号，直接返回-1
+	return ret;
+}
+
 void LexAnalyzer::output_result(string outFile)
 {
 	ofstream f(outFile, ios::out);

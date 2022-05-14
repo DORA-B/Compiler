@@ -8,8 +8,7 @@
 <FunDec> -> [ID] <CreateFunTable_m> [LPAREN] <VarContent> [RPAREN]
 <CreateFunTable_m> -> [z]
 <VarContent> -> <VarList> | [VOID] | [z]
-<VarList> -> <ParamDec> [COMMA] <VarList> | <ParamDec> 
-<ParamDec> -> [INT] [ID]
+<VarList> -> [INT] [ID] [COMMA] <VarList> | [INT] [ID]
 <Block> -> [LBBRACKET] <DefList> <StmtList> [RBBRACKET]
 <DefList> -> <Def> [SEMI] <DefList> | [z]
 <Def> -> [INT] [ID] <ParameterContent>
@@ -34,7 +33,8 @@
 <WhileStmt> -> <WhileStmt_m1> [WHILE] [LPAREN] <Exp> [RPAREN] <WhileStmt_m2> <Block>
 <WhileStmt_m1> -> [z]
 <WhileStmt_m2> -> [z]
-<IfStmt> -> [IF] [LPAREN] <Exp> [RPAREN] <IfStmt_m> <Block> <IfNext>
+<IfStmt> -> [IF] [LPAREN] <Exp_stmt> [RPAREN] <IfStmt_m> <Block> <IfNext>
+<Exp_stmt> -> <Exp>
 <IfStmt_m> -> [z]
 <IfNext> -> [z] | [ELSE] <IfStmt_next> <Block>
 <IfStmt_next>-> [z]

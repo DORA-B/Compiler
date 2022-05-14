@@ -158,8 +158,10 @@ public:
 	bool lex_analyze(string inFile);
 	void output_result(string outFile);
 	void getResult();//LexResult->Result
+	int getcount(const Symbol elem);
 	int curLine;//当前扫描的行数
 	queue<SymToken>Result;//输出给语法分析
+	
 	vector<Token>LexResult;//存储词法分析结果
 };
 
