@@ -144,6 +144,7 @@
     <ClCompile Include="Production.cpp" />
     <ClCompile Include="LR1.cpp" />
     <ClCompile Include="LR1_main.cpp" />
+    <ClCompile Include="Semantic.cpp" />
     <ClCompile Include="Symantic.cpp" />
     <ClCompile Include="Symbol.cpp" />
   </ItemGroup>

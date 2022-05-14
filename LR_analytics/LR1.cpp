@@ -709,3 +709,151 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 	fout << sstr.str();
 	fout.close();
 }
+
+
+
+void LR1::Seman_analysis(queue<SymToken>& Code)
+{
+	vector<Symbol> Symstack; //符号栈
+	vector<int>Statestack;  //状态栈
+	Statestack.push_back(0);
+	Symstack.push_back({ symEnd });
+	SymToken epsilon_next_lexis;
+	SymToken edsy = { {-1,strend,LexComponent::End},symEnd };//
+	Code.push(edsy);//
+
+	stack<IdentNode*> treeNodeStack;
+	IdentNode* tp;
+
+	/*********************************************************************/
+	//将 Start 加入 semantic 的语义符号列表
+	//SemanticAnalysis.insertSymbol( {{-1,"",strstart},-1,- 1 } );
+
+	/*********************************************************************/
+
+	//int pos;
+	while (true)
+	{
+		Symbol first = Code.front().sym;
+		Token firtok = Code.front().tok;
+
+		auto current = ActionTable.find({ Statestack.back(),first });
+		//情况1：ERROR
+		if (current == ActionTable.end()) {
+			cout << "ACTIONERROR : Symbol " << firtok.content << "can't find, error row is" << firtok.line << endl;
+			break;
+		}
+		//情况2：ACCEPT
+		else if (current->second.action == ACCEPT) {
+			cout << "ACCEPT" << endl;
+			Seman_tree(reductionTreeRoot,0);
+			break;
+		}
+		//情况3：SHIFTIN
+		else if (current->second.action == SHIFTIN) {
+			Symstack.push_back(first);
+			Statestack.push_back(current->second.index);
+			Code.pop();
+			/*********************************************************************/
+			/*string tmp_in;
+			if (firtok.type == LexComponent::ID)
+				tmp_in = "[ID]";
+			else if (firtok.type == LexComponent::Digit)
+				tmp_in = "[INT]";
+			else
+				tmp_in = firtok.content;*/
+			//将 token 加入 semantic 的语义符号列表
+			//SemanticAnalysis.insertSymbol({{ firtok.line,firtok.content,tmp_in } , -1,- 1});
+			/*********************************************************************/
+			tp = new(nothrow)IdentNode;
+			if (!tp) { exit(-2); }
+
+			tp->content = pair<string,int>(first.content, this->lex.getcount(firtok.content));
+			treeNodeStack.push(tp);
+
+		}
+		//情况4：规约
+		else if (current->second.action == REDUCE) {
+			//GotoTable
+			//找到generator中的规约状态
+			Production now = generator[current->second.index];
+			int Rightnum = int(now.Right.size());
+
+			if (now.Right.front().symbol_type != EPSILON)
+			{
+				while (Rightnum--)
+				{
+					Symstack.pop_back();
+					Statestack.pop_back();
+				}
+			}
+			else //当前规约式为空规约式
+			{
+				tp = new(nothrow)IdentNode;
+				if (!tp) { exit(-2); }
+
+				tp->content = pair<string, int>("[z]",-1);
+				treeNodeStack.push(tp);
+
+				//Symstack.push_back(symEps); //
+				//Statestack.push_back(current->second.index);
+			}
+
+
+
+			tp = new(nothrow)IdentNode;
+			if (!tp) { exit(-2); }
+			tp->content = pair<string, int>(now.Left.content, -1);
+
+			for (auto it = now.Right.begin(); it != now.Right.end(); it++)
+			{
+				treeNodeStack.top()->parent = tp;// wrong
+				tp->children.push_back(treeNodeStack.top());
+				treeNodeStack.pop();
+			}
+			reverse(tp->children.begin(), tp->children.end());
+			reductionTreeRoot = tp;
+			treeNodeStack.push(tp);
+
+			SemanticAnalysis.seman_analysis(now,tp,lex.NameTable);
+
+			Symbol syleft = now.Left;
+			//状态栈查Goto表
+			Symstack.push_back(syleft);
+
+			int state = Statestack.back();
+
+			Symbol codestart = Code.front().sym;
+			auto goto_id = GotoTable.find({ state, syleft });
+			if (goto_id == GotoTable.end())
+			{
+				cout << "GOTOERROR,"<< syleft <<"not find" << endl;
+				break;
+			}
+			Statestack.push_back(goto_id->second.index);
+
+			/*********************************************************************/
+
+			//进行语义分析
+			//这里语义分析的时候，JUJU代码中只用到了产生式左边和右边的字符串，这里全部传入
+
+			//SemanticAnalysis.semanticANL(now);
+
+			/*********************************************************************/
+
+		}
+	}
+}
+
+void LR1::Seman_tree(IdentNode* thenode, int thelevel)
+{
+	if (thelevel > maxtreelevel)
+		maxtreelevel = thelevel;
+	if (thenode->children.size() == 0)
+		leafnum++;
+	thenode->level = thelevel;
+	for (int i = 0; i < thenode->children.size(); i++)
+	{
+		Seman_tree(thenode->children[i], thelevel + 1);
+	}
+}

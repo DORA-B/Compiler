@@ -29,10 +29,19 @@ int main() {
 
 	lr1.getTable();
 
-	lr1.printTable("resultTable.txt");
-	lr1.grammartree("tree.dot",lr1.lex.Result);
+	//lr1.printTable("resultTable1.txt");
+	//lr1.grammartree("tree.dot",lr1.lex.Result);
 
-	//lr1.SemanticAnalysis.printQuadruple("quadrupleresult.txt");
+	queue<SymToken> tok = lr1.lex.Result;
+	lr1.Seman_analysis(tok);
+
+
+
+	cout << "********Intermediate Code********\n";
+	for (auto i = 0; i < lr1.SemanticAnalysis.Quadruple_Code.size(); i++)
+	{
+		cout << "(" << i << ")\t" << lr1.SemanticAnalysis.Quadruple_Code[i].op << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg1 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg2 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].res << endl;
+	}
 
 	return 0;
 }
