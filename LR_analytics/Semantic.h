@@ -47,14 +47,12 @@ struct IdentNode
 	int kind =  VAR;
 	int n = 0;
 	int width = 0;
-	vector<int> dimension;
-	vector<string> params;
+	vector<int> dimension;  //存储数组/函数维度
+	vector<string> params;  //函数参数
 	string place;
 	int quad;
 	int true_list;
 	int false_list;
-	int x = -1; //供绘图使用
-	int y = -1; //供绘图使用
 	IdentNode() { clear(); }
 	void clear()
 	{
@@ -177,7 +175,7 @@ private:
 	string lookup(int id);
 	symbolTableItem* find(int id);
 	int nextstat();
-	void EMIT(string op, string arg1, string arg2, string result);
+	void AddQCode(string op, string arg1, string arg2, string result);
 private:
 	//<Program> -> <Pro_m> <DeclareString>
 	void SemanProd_Program(const Production& pro, IdentNode * root , map<int, string> nameTable);

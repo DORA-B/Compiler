@@ -603,7 +603,12 @@ int LexAnalyzer::getcount(const string elem)
 			return ret;
 		}
 	}
-	//不存在，说明不是ID符号，直接返回-1
+	//不存在，说明不是ID符号，
+	//是否是数字,如果是，则ret为数字
+	if (elem.find_first_not_of("0123456789") == string::npos)
+		ret = stoi(elem);
+
+	//直接返回-1
 	return ret;
 }
 

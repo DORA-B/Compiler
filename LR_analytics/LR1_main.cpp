@@ -1,5 +1,6 @@
 #include "LR1.h"
-
+#include "DAG_Optimize.h"
+#include "GenerateCode.h"
 int main() {
 	LR1 lr1;
 	init_map();
@@ -30,18 +31,22 @@ int main() {
 	lr1.getTable();
 
 	//lr1.printTable("resultTable1.txt");
-	//lr1.grammartree("tree.dot",lr1.lex.Result);
+	//lr1.grammartree("tree.dot",lr1.lex.res);
 
 	queue<SymToken> tok = lr1.lex.Result;
 	lr1.Seman_analysis(tok);
 
+	//cout << "********Intermediate Code********\n";
+	//for (auto i = 0; i < lr1.SemanticAnalysis.Quadruple_Code.size(); i++)
+	//{
+	//	cout << "(" << i << ")\t" << lr1.SemanticAnalysis.Quadruple_Code[i].op << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg1 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg2 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].res << endl;
+	//}
 
-
-	cout << "********Intermediate Code********\n";
-	for (auto i = 0; i < lr1.SemanticAnalysis.Quadruple_Code.size(); i++)
-	{
-		cout << "(" << i << ")\t" << lr1.SemanticAnalysis.Quadruple_Code[i].op << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg1 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].arg2 << '\t' << lr1.SemanticAnalysis.Quadruple_Code[i].res << endl;
-	}
+	optimizerAnalysis optimizer(lr1.lex.NameTable, lr1.SemanticAnalysis.global_table, lr1.SemanticAnalysis.Quadruple_Code);
+	double opt_rate = optimizer.analysis();
+	objectCodeGenerator MIPSgenerator(optimizer.OptimiseQuadruple, optimizer.block_group, 128);
+	MIPSgenerator.geneObjectCode();
+	MIPSgenerator.showObjectCode();
 
 	return 0;
 }

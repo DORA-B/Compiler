@@ -139,16 +139,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DAG_Optimize.cpp" />
+    <ClCompile Include="GenerateCode.cpp" />
     <ClCompile Include="Lex.cpp" />
-    <ClCompile Include="LR1_semantic.cpp" />
     <ClCompile Include="Production.cpp" />
     <ClCompile Include="LR1.cpp" />
     <ClCompile Include="LR1_main.cpp" />
     <ClCompile Include="Semantic.cpp" />
-    <ClCompile Include="Symantic.cpp" />
     <ClCompile Include="Symbol.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DAG_Optimize.h" />
+    <ClInclude Include="GenerateCode.h" />
     <ClInclude Include="Lex.h" />
     <ClInclude Include="Production.h" />
     <ClInclude Include="LR1.h" />

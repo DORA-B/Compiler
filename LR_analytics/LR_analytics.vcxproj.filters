@@ -30,13 +30,13 @@
     <ClCompile Include="Lex.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Symantic.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="LR1_semantic.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Semantic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DAG_Optimize.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GenerateCode.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,6 +54,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Semantic.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DAG_Optimize.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GenerateCode.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

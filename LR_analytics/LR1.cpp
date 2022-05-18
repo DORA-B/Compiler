@@ -602,6 +602,9 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 	SymToken edsy = {{-1,strend,LexComponent::End},symEnd};//
 	Code.push(edsy);//
 
+	stack<IdentNode*> treeNodeStack;
+	IdentNode* tp;
+
 	/*********************************************************************/
 
 	//将 Start 加入 semantic 的语义符号列表
@@ -626,6 +629,7 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 		else if (current->second.action == ACCEPT) {
 			cout << "ACCEPT" << endl;
 			sstr << "}" << endl;
+			Seman_tree(reductionTreeRoot, 0);
 			break;
 		}
 		//情况3：SHIFTIN
@@ -636,19 +640,12 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 			printsymstac.push_back(prt);
 			sstr << "v" << prt++ << "[label=\"" << first << "\",fillcolor=paleturquoise,shape=doublecircle,style=filled];" << endl;
 
+			tp = new(nothrow)IdentNode;
+			if (!tp) { exit(-2); }
 
-			/*********************************************************************/
-			string tmp_in;
-			if (firtok.type == LexComponent::ID)
-				tmp_in = "[ID]";
-			else if (firtok.type == LexComponent::Digit)
-				tmp_in = "[INT]";
-			else
-				tmp_in = firtok.content;
-			//将 token 加入 semantic 的语义符号列表
-			//SemanticAnalysis.insertSymbol({{ firtok.line,firtok.content,tmp_in } , -1,- 1});
+			tp->content = pair<string, int>(first.content, this->lex.getcount(firtok.content));
+			treeNodeStack.push(tp);
 
-			/*********************************************************************/
 
 		}
 		//情况4：规约
@@ -657,6 +654,7 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 			//找到generator中的规约状态
 			Production now = generator[current->second.index];
 			int Rightnum = int(now.Right.size());
+
 			vector<int>printsym;//为打印做准备
 			if (now.Right.front().symbol_type != EPSILON)
 			{
@@ -668,6 +666,30 @@ void LR1::grammartree(const string filepath, queue<SymToken>& Code)
 					printsymstac.pop_back();//自己打印的栈pop					
 				}
 			}
+			else //当前规约式为空规约式
+			{
+				tp = new(nothrow)IdentNode;
+				if (!tp) { exit(-2); }
+
+				tp->content = pair<string, int>("[z]", -1);
+				treeNodeStack.push(tp);
+			}
+			tp = new(nothrow)IdentNode;
+			if (!tp) { exit(-2); }
+			tp->content = pair<string, int>(now.Left.content, -1);
+
+			for (auto it = now.Right.begin(); it != now.Right.end(); it++)
+			{
+				treeNodeStack.top()->parent = tp;// wrong
+				tp->children.push_back(treeNodeStack.top());
+				treeNodeStack.pop();
+			}
+			reverse(tp->children.begin(), tp->children.end());
+			reductionTreeRoot = tp;
+			treeNodeStack.push(tp);
+
+			SemanticAnalysis.seman_analysis(now, tp, lex.NameTable);
+
 			Symbol syleft = now.Left;
 			//状态站查Goto表
 			Symstack.push_back(syleft);
@@ -832,14 +854,6 @@ void LR1::Seman_analysis(queue<SymToken>& Code)
 			}
 			Statestack.push_back(goto_id->second.index);
 
-			/*********************************************************************/
-
-			//进行语义分析
-			//这里语义分析的时候，JUJU代码中只用到了产生式左边和右边的字符串，这里全部传入
-
-			//SemanticAnalysis.semanticANL(now);
-
-			/*********************************************************************/
 
 		}
 	}

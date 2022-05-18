@@ -34,7 +34,7 @@ string SemanticAnalyzer::newtemp()
 	table_stack.back()->enter(temp_counter--, INT, VAR, offset_stack.back());
 	offset_stack.back() += 4;
 
-	EMIT("+", "$sp", to_string(4), "$sp");
+	AddQCode("+", "$sp", to_string(4), "$sp");
 	return temp_name;
 }
 
@@ -86,15 +86,17 @@ int SemanticAnalyzer::nextstat()
 	return Quadruple_Code.size();
 }
 
-void SemanticAnalyzer::EMIT(string op, string arg1, string arg2, string result)
+void SemanticAnalyzer::AddQCode(string op, string arg1, string arg2, string result)
 {
-/**********
-op can be: nop j jal break ret jnz j< j<= j> j>= j== j!= 
-:= []= =[] + - & | ^ 
-**********/
+//op :
+//nop j jal break ret jnz j< j<= j> j>= j== j!= 
+// 
+//:= []= =[] + - & | ^ 
+
 	Quadruple quad = { op,arg1,arg2,result };
 	Quadruple_Code.push_back(quad);
 }
+
 /*分析主体函数*/
 void SemanticAnalyzer::seman_analysis(const Production& pro, IdentNode* root, map<int, string> nameTable)
 {
@@ -310,7 +312,7 @@ void SemanticAnalyzer::SemanProd_ParaContent(const Production& pro, IdentNode* r
 		root->n = 1;
 	}
 	//<ParameterContent> -> <ArrayDeclare>
-	else if (first_symmpro.content == "<ArrayDeclare> ")
+	else if (first_symmpro.content == "<ArrayDeclare>")
 	{
 		root->kind = ARRAY;
 		root->n = root->children[0]->n;
@@ -460,7 +462,7 @@ void SemanticAnalyzer::SemanProd_Def(const Production& pro, IdentNode* root, map
 	table_stack.back()->enter(root->children[1]->content.second, root->type, root->kind, offset_stack.back());
 	table_stack.back()->enterdimension(root->children[1]->content.second, root->dimension);
 	offset_stack.back() += root->width;
-	EMIT("+", "$sp", to_string(root->width), "$sp");
+	AddQCode("+", "$sp", to_string(root->width), "$sp");
 }
 
 void SemanticAnalyzer::SemanProd_StmtList(const Production& pro, IdentNode* root, map<int, string> nameTable)
@@ -482,15 +484,13 @@ void SemanticAnalyzer::SemanProd_AssignStmt(const Production& pro, IdentNode* ro
 		string p = lookup(root->children[0]->content.second);
 		if (p == "")
 		{
-			//cerr << "ERROR: " << root->children[0]->content.second << "is undefineded\n";
-			//exit(-1);
 			throw string("ERROR: 语义分析器错误:") + nameTable[root->children[0]->content.second] + string("未定义\n");
 		}
 		else
 		{
-			EMIT(":=", root->children[2]->place, "", p);
+			AddQCode(":=", root->children[2]->place, "", p);
 			root->place = newtemp();
-			EMIT(":=", root->children[2]->place, "", root->place);
+			AddQCode(":=", root->children[2]->place, "", root->place);
 		}
 	}
 	else if (first_symmpro.content == "<Array>")
@@ -507,9 +507,9 @@ void SemanticAnalyzer::SemanProd_AssignStmt(const Production& pro, IdentNode* ro
 		}
 		else
 		{
-			EMIT("[]=", root->children[2]->place, root->children[0]->place, p);
+			AddQCode("[]=", root->children[2]->place, root->children[0]->place, p);
 			root->place = newtemp();
-			EMIT(":=", root->children[2]->place, "", root->place);
+			AddQCode(":=", root->children[2]->place, "", root->place);
 		}
 	}
 }
@@ -526,11 +526,11 @@ void SemanticAnalyzer::SemanProd_Exp(const Production& pro, IdentNode* root, map
 	else if (short_long == 3)
 	{
 		root->place = newtemp();
-		EMIT("jnz", root->children[0]->place, "", to_string(nextstat() + 4));
-		EMIT("jnz", root->children[2]->place, "", to_string(nextstat() + 3));
-		EMIT(":=", to_string(0), "", root->place);
-		EMIT("j", "", "", to_string(nextstat() + 2));
-		EMIT(":=", to_string(1), "", root->place);
+		AddQCode("jnz", root->children[0]->place, "", to_string(nextstat() + 4));
+		AddQCode("jnz", root->children[2]->place, "", to_string(nextstat() + 3));
+		AddQCode(":=", to_string(0), "", root->place);
+		AddQCode("j", "", "", to_string(nextstat() + 2));
+		AddQCode(":=", to_string(1), "", root->place);
 	}
 }
 
@@ -546,12 +546,12 @@ void SemanticAnalyzer::SemanProd_ANDExp(const Production& pro, IdentNode* root, 
 	else if (short_long == 3)
 	{
 		root->place = newtemp();
-		EMIT("jnz", root->children[0]->place, "", to_string(nextstat() + 2));
-		EMIT("j", "", "", to_string(nextstat() + 2));
-		EMIT("jnz", root->children[2]->place, "", to_string(nextstat() + 3));
-		EMIT(":=", to_string(0), "", root->place);
-		EMIT("j", "", "", to_string(nextstat() + 2));
-		EMIT(":=", to_string(1), "", root->place);
+		AddQCode("jnz", root->children[0]->place, "", to_string(nextstat() + 2));
+		AddQCode("j", "", "", to_string(nextstat() + 2));
+		AddQCode("jnz", root->children[2]->place, "", to_string(nextstat() + 3));
+		AddQCode(":=", to_string(0), "", root->place);
+		AddQCode("j", "", "", to_string(nextstat() + 2));
+		AddQCode(":=", to_string(1), "", root->place);
 	}
 }
 
@@ -567,10 +567,10 @@ void SemanticAnalyzer::SemanProd_NOTExp(const Production& pro, IdentNode* root, 
 	else if (short_long == 2)
 	{
 		root->place = newtemp();
-		EMIT("jnz", root->children[1]->place, "", to_string(nextstat() + 3));
-		EMIT(":=", to_string(1), "", root->place);
-		EMIT("j", "", "", to_string(nextstat() + 2));
-		EMIT(":=", to_string(0), "", root->place);
+		AddQCode("jnz", root->children[1]->place, "", to_string(nextstat() + 3));
+		AddQCode(":=", to_string(1), "", root->place);
+		AddQCode("j", "", "", to_string(nextstat() + 2));
+		AddQCode(":=", to_string(0), "", root->place);
 	}
 }
 
@@ -590,31 +590,31 @@ void SemanticAnalyzer::SemanProd_SubExp(const Production& pro, IdentNode* root, 
 		//[GT] | [LT] | [GE] | [LE] | [EQ] | [NQ]
 		if (relop == "[LT]")
 		{
-			EMIT("j<", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3)); 
+			AddQCode("j<", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3)); 
 		}
 		else if (relop == "[LE]")
 		{
-			EMIT("j<=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
+			AddQCode("j<=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
 		}
 		else if (relop == "[GT]")
 		{
-			EMIT("j>", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3)); 
+			AddQCode("j>", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3)); 
 		}
 		else if (relop == "[GE]")
 		{
-			EMIT("j>=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
+			AddQCode("j>=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
 		}
 		else if (relop == "[EQ]")
 		{
-			EMIT("j==", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
+			AddQCode("j==", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
 		}
 		else if (relop == "[NQ]")
 		{
-			EMIT("j!=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
+			AddQCode("j!=", root->children[0]->place, root->children[2]->place, to_string(nextstat() + 3));
 		}
-		EMIT(":=", to_string(0), "", root->place);
-		EMIT("j", "", "", to_string(nextstat() + 2));
-		EMIT(":=", to_string(1), "", root->place);
+		AddQCode(":=", to_string(0), "", root->place);
+		AddQCode("j", "", "", to_string(nextstat() + 2));
+		AddQCode(":=", to_string(1), "", root->place);
 	}
 }
 
@@ -641,23 +641,23 @@ void SemanticAnalyzer::SemanProd_OPNUM(const Production& pro, IdentNode* root, m
 		string op1 = root->children[1]->content.first;
 		if (op1 == "[PLUS]")
 		{
-			EMIT("+", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("+", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else if (op1 == "[SUB]")
 		{
-			EMIT("-", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("-", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else if (op1 == "[BinaryAnd]")
 		{
-			EMIT("&", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("&", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else if (op1 == "[BinaryXor]")
 		{
-			EMIT("|", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("|", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else if (op1 == "[BinaryOr]")
 		{
-			EMIT("^", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("^", root->children[0]->place, root->children[2]->place, root->place);
 		}
 	}
 }
@@ -678,11 +678,11 @@ void SemanticAnalyzer::SemanProd_Item(const Production& pro, IdentNode* root, ma
 		string op2 = root->children[1]->content.first;
 		if (op2 == "[MUL]")
 		{
-			EMIT("*", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("*", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else if (op2 == "[DIV]")
 		{
-			EMIT("/", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("/", root->children[0]->place, root->children[2]->place, root->place);
 		}
 	}
 }
@@ -711,7 +711,7 @@ void SemanticAnalyzer::SemanProd_Factor(const Production& pro, IdentNode* root, 
 			if (first_sym == "[NUM]")
 			{
 				root->place = newtemp();
-				EMIT(":=", to_string(root->children[0]->content.second), "", root->place);
+				AddQCode(":=", to_string(root->children[0]->content.second), "", root->place);
 			}
 			else if (first_sym == "[ID]")
 			{
@@ -725,25 +725,21 @@ void SemanticAnalyzer::SemanProd_Factor(const Production& pro, IdentNode* root, 
 					root->place = p;
 				}
 			}
-			else if (first_sym == "[Array]")
+			else if (first_sym == "<Array>")
 			{
 				if (root->children[0]->dimension.size() != 1)
 				{
-					/*cerr << "ERROR: 数组索引不完整\n";
-					exit(-1);*/
 					throw string("ERROR: 语义分析器错误:遇到不完整的数组索引\n");
 				}
 				string p = lookup(root->children[0]->content.second);
 				if (p == "")
 				{
-					//cerr << "ERROR: " << root->children[0]->content.second << "is undefineded\n";
-					//exit(-1);
 					throw string("ERROR: 语义分析器错误:") + nameTable[root->children[0]->content.second] + string("未定义\n");
 				}
 				else
 				{
 					root->place = newtemp();
-					EMIT("=[]", p, root->children[0]->place, root->place);
+					AddQCode("=[]", p, root->children[0]->place, root->place);
 				}
 			}
 
@@ -759,65 +755,64 @@ void SemanticAnalyzer::SemanProd_Factor(const Production& pro, IdentNode* root, 
 			}
 			if (f->dimension[0] != root->children[1]->params.size())
 			{
-				//cerr << "ERROR: 调用过程 " << f->id << " 需要实参: " << f->dimension[0] << " 个, 实际给出: " << root->children[1]->params.size() << " 个\n";
 				throw string("ERROR: 语义分析器错误:调用过程 ") + nameTable[f->id] + string(" 需要实参: ") + to_string(f->dimension[0]) + string(" 个, 实际给出: ") + to_string(root->children[1]->params.size()) + string("个\n");
 			}
 
-			EMIT(":=", "$ra", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t0", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t1", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t2", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t3", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t4", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t5", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t6", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$t7", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$ra", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t0", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t1", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t2", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t3", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t4", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t5", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t6", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$t7", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
 
 			//string t = newtemp();
-			EMIT(":=", "$sp", "", "$s0");
-			EMIT(":=", "$fp", "", "[$sp]");
-			EMIT("+", "$sp", to_string(4), "$sp");
-			EMIT(":=", "$s0", "", "$fp");
+			AddQCode(":=", "$sp", "", "$s0");
+			AddQCode(":=", "$fp", "", "[$sp]");
+			AddQCode("+", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "$s0", "", "$fp");
 
 			for (auto i = 0; i < root->children[1]->params.size(); i++)
 			{
-				EMIT(":=", root->children[1]->params[i], "", "[$sp]");
-				EMIT("+", "$sp", to_string(4), "$sp");
+				AddQCode(":=", root->children[1]->params[i], "", "[$sp]");
+				AddQCode("+", "$sp", to_string(4), "$sp");
 			}
-			EMIT("jal", "", "", to_string(f->offset));
-			EMIT(":=", "$fp", "", "$sp");
-			EMIT(":=", "[$sp]", "", "$fp");
+			AddQCode("jal", "", "", to_string(f->offset));
+			AddQCode(":=", "$fp", "", "$sp");
+			AddQCode(":=", "[$sp]", "", "$fp");
 
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t7");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t6");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t5");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t4");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t3");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t2");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t1");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$t0");
-			EMIT("-", "$sp", to_string(4), "$sp");
-			EMIT(":=", "[$sp]", "", "$ra");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t7");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t6");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t5");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t4");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t3");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t2");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t1");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$t0");
+			AddQCode("-", "$sp", to_string(4), "$sp");
+			AddQCode(":=", "[$sp]", "", "$ra");
 
 			root->place = newtemp();
-			EMIT(":=", "$v0", "", root->place);
+			AddQCode(":=", "$v0", "", root->place);
 			break;
 		}
 		// [LPAREN] <Exp> [RPAREN] | [LPAREN] <AssignStmt> [RPAREN] 
@@ -851,8 +846,6 @@ void SemanticAnalyzer::SemanProd_Array(const Production& pro, IdentNode* root, m
 
 		if (root->dimension.size() == 0)
 		{
-			//cerr << "ERROR: array pos error\n";
-			//exit(-1);
 			throw string("ERROR: 语义分析器错误:数组下标错误");
 		}
 		else if (root->dimension.size() == 1)
@@ -867,9 +860,9 @@ void SemanticAnalyzer::SemanProd_Array(const Production& pro, IdentNode* root, m
 				dim_len *= root->dimension[i];
 			}
 			string p = newtemp();
-			EMIT(":=", to_string(dim_len), "", p);
+			AddQCode(":=", to_string(dim_len), "", p);
 			root->place = newtemp();
-			EMIT("*", p, root->children[2]->place, root->place);
+			AddQCode("*", p, root->children[2]->place, root->place);
 		}
 	}
 	//| <Array> [LeftSquareBracket] <Exp> [RightSquareBracket] 
@@ -882,14 +875,12 @@ void SemanticAnalyzer::SemanProd_Array(const Production& pro, IdentNode* root, m
 
 		if (root->dimension.size() == 0)
 		{
-			//cerr << "ERROR: array pos error\n";
-			//exit(-1);
 			throw string("ERROR: 语义分析器错误:数组下标错误");
 		}
 		else if (root->dimension.size() == 1)
 		{
 			root->place = newtemp();
-			EMIT("+", root->children[0]->place, root->children[2]->place, root->place);
+			AddQCode("+", root->children[0]->place, root->children[2]->place, root->place);
 		}
 		else
 		{
@@ -899,17 +890,18 @@ void SemanticAnalyzer::SemanProd_Array(const Production& pro, IdentNode* root, m
 				dim_len *= root->dimension[i];
 			}
 			string p1 = newtemp();
-			EMIT(":=", to_string(dim_len), "", p1);
+			AddQCode(":=", to_string(dim_len), "", p1);
 			string p2 = newtemp();
-			EMIT("*", p1, root->children[2]->place, p2);
+			AddQCode("*", p1, root->children[2]->place, p2);
 			root->place = newtemp();
-			EMIT("+", root->children[0]->place, p2, root->place);
+			AddQCode("+", root->children[0]->place, p2, root->place);
 		}
 	}
 }
 
 void SemanticAnalyzer::SemanProd_CallStmt(const Production& pro, IdentNode* root, map<int, string> nameTable)
 {
+	//[LPAREN] <CallFun>[RPAREN]
 	root->params = root->children[1]->params;
 }
 
@@ -923,7 +915,7 @@ void SemanticAnalyzer::SemanProd_CallFun(const Production& pro, IdentNode* root,
 	}
 	else if (first_sym == "<Args>")
 	{
-		root->params.push_back(root->children[0]->place);
+		root->params = root->children[0]->params;
 	}
 }
 
@@ -949,28 +941,28 @@ void SemanticAnalyzer::SemanProd_ReturnStmt(const Production& pro, IdentNode* ro
 	//[RETURN]
 	if (short_long==1)
 	{
-		EMIT(":=", to_string(0), "", "$v0");
-		EMIT("ret", "", "", "");
+		AddQCode(":=", to_string(0), "", "$v0");
+		AddQCode("ret", "", "", "");
 	}
 	//[RETURN] <Exp> | 
 	else if (short_long == 2)
 	{
-		EMIT(":=", root->children[1]->place, "", "$v0");
-		EMIT("ret", "", "", "");
+		AddQCode(":=", root->children[1]->place, "", "$v0");
+		AddQCode("ret", "", "", "");
 	}
 }
 
 void SemanticAnalyzer::SemanProd_WhileStmt(const Production& pro, IdentNode* root, map<int, string> nameTable)
 {
-	//<WhileStmt_m1> [WHILE] [LPAREN] <Exp> [RPAREN] <WhileStmt_m2> <Block>
+	//<WhileStmt_m1> [WHILE] [LPAREN] <Exp_stmt> [RPAREN] <WhileStmt_m2> <Block>
 	symbolTable* t = table_stack.back();
 	table_stack.pop_back();
 	t->width = t->table.empty() ? 0 : offset_stack.back() - t->table[0].offset;
 	offset_stack.pop_back();
 
-	EMIT("-", "$sp", to_string(t->width), "$sp");
+	AddQCode("-", "$sp", to_string(t->width), "$sp");
 
-	EMIT("j", "", "", to_string(root->children[0]->quad));
+	AddQCode("j", "", "", to_string(root->children[0]->quad));
 	Quadruple_Code[root->children[3]->true_list].res = to_string(root->children[5]->quad);
 	Quadruple_Code[root->children[3]->false_list].res = to_string(nextstat());
 }
@@ -986,7 +978,7 @@ void SemanticAnalyzer::SemanProd_WhileStmt_m2(const Production& pro, IdentNode* 
 {
 	root->quad = nextstat();
 	symbolTable* t = new(nothrow)symbolTable;
-	if (!t) { /*cerr << "ERROR: create symbol table failed\n"; exit(-1);*/ throw string("ERROR: 内部错误:bad_alloc创建符号表失败\n"); }
+	if (!t) {throw string("ERROR: 内部错误:bad_alloc创建符号表失败\n"); }
 	if (last_table)
 	{
 		last_table->next = t;
@@ -1017,18 +1009,18 @@ void SemanticAnalyzer::SemanProd_IfStmt(const Production& pro, IdentNode* root, 
 	t->width = t->table.empty() ? 0 : offset_stack.back() - t->table[0].offset;
 	offset_stack.pop_back();
 
-	EMIT("-", "$sp", to_string(t->width), "$sp");
+	AddQCode("-", "$sp", to_string(t->width), "$sp");
 
 	Quadruple_Code[root->children[2]->true_list].res = to_string(root->children[4]->quad);
 	
 	if (root->children[6]->quad != NULL && root->children[6]->true_list != NULL)
 	{
-		Quadruple_Code[root->children[2]->false_list].res = to_string(nextstat());
+		Quadruple_Code[root->children[2]->false_list].res = to_string(root->children[6]->quad);
+		Quadruple_Code[root->children[6]->true_list].res = to_string(nextstat());
 	}
 	else
 	{
-		Quadruple_Code[root->children[2]->false_list].res = to_string(root->children[7]->quad);
-		Quadruple_Code[root->children[7]->true_list].res = to_string(nextstat());
+		Quadruple_Code[root->children[2]->false_list].res = to_string(nextstat());		
 	}
 }
 
@@ -1051,16 +1043,16 @@ void SemanticAnalyzer::SemanProd_IfNext(const Production& pro, IdentNode* root, 
 	// [z]
 	else if (short_long == 1)
 	{
-		root->true_list=NULL;
+		root->true_list = NULL;
 		root->quad = NULL;
 	}
 }
 void SemanticAnalyzer::SemanProd_Exp_stmt(const Production& pro, IdentNode* root, map<int, string> nameTable)
 {
 	root->true_list = nextstat();
-	EMIT("jnz", root->children[0]->place, "", to_string(0));
+	AddQCode("jnz", root->children[0]->place, "", to_string(0));
 	root->false_list = nextstat();
-	EMIT("j", "", "", to_string(0));
+	AddQCode("j", "", "", to_string(0));
 }
 //<IfStmt_next>-> [z]
 void SemanticAnalyzer::SemanProd_IfStmt_next(const Production& pro, IdentNode* root, map<int, string> nameTable)
@@ -1070,10 +1062,10 @@ void SemanticAnalyzer::SemanProd_IfStmt_next(const Production& pro, IdentNode* r
 	t->width = t->table.empty() ? 0 : offset_stack.back() - t->table[0].offset;
 	offset_stack.pop_back();
 
-	EMIT("-", "$sp", to_string(t->width), "$sp");
+	AddQCode("-", "$sp", to_string(t->width), "$sp");
 
 	t = new(nothrow)symbolTable;
-	if (!t) { /*cerr << "ERROR: create symbol table failed\n"; exit(-1);*/ throw string("ERROR: 内部错误:bad_alloc创建符号表失败\n"); }
+	if (!t) { throw string("ERROR: 内部错误:bad_alloc创建符号表失败\n"); }
 	if (last_table)
 	{
 		last_table->next = t;
@@ -1095,6 +1087,6 @@ void SemanticAnalyzer::SemanProd_IfStmt_next(const Production& pro, IdentNode* r
 		offset_stack.push_back(back_offset);
 	}
 	root->true_list = nextstat();
-	EMIT("j", "", "", to_string(0));
+	AddQCode("j", "", "", to_string(0));
 	root->quad = nextstat();
 }
